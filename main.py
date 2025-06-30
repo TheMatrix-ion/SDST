@@ -66,7 +66,7 @@ elif DATASET == 'HoustonU':
     gt = data_mat['HoustonU_GT']
     dataset_name = "HoustonU"  # data_name
     class_count = 15  # calss_num
-load_path = ".Dataset/" + dataset_name
+load_path = "./Dataset/" + dataset_name
 ori_gt = gt
 img = p.std_norm(data)
 
