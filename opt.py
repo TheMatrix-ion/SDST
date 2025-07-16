@@ -7,7 +7,7 @@ parser.add_argument('--name', type=str, default="dataset")
 parser.add_argument('--cuda', type=bool, default=True)
 parser.add_argument('--pca', type=int, default=3)
 parser.add_argument('--lr', type=float, default=1e-4)
-parser.add_argument('--epochs', type=int, default=100)
+parser.add_argument('--epochs', type=int, default=1)
 parser.add_argument('--show_training_details', type=bool, default=False)
 
 # IGAE structure parameter from DFCN

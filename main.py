@@ -23,6 +23,7 @@ dataset = {
     2: "salinas",
     3: "Botswana",
     4: "HoustonU",
+    5: "salinasA"
 }
 DATASET = dataset[3]
 os.environ["CUDA_DEVICE_ORDER"] = 'PCI_BUS_ID'
@@ -51,11 +52,11 @@ elif DATASET == 'salinas':
     k = 7
     n_seg = 1000
     seed = 452
-    data_mat = sio.loadmat(
-        './Dataset/Salinas.mat')
-    data = data_mat['salinas_corrected']
-    gt = data_mat['salinas_gt']
-    dataset_name = "salinas"  # data_name
+    data_mat = sio.loadmat('./Dataset/Salinas_corrected.mat')
+    data = data_mat['Salinas_corrected']
+    gt_mat = sio.loadmat('./Dataset/Salinas_gt.mat')
+    gt = gt_mat['Salinas_gt']
+    dataset_name = "Salinas_corrected"  # data name
     class_count = 16  # calss_num
 elif DATASET == 'HoustonU':
     k = 12
@@ -67,6 +68,16 @@ elif DATASET == 'HoustonU':
     gt = data_mat['HoustonU_GT']
     dataset_name = "HoustonU"  # data_name
     class_count = 15  # calss_num
+elif DATASET == 'salinasA':
+    k = 7
+    n_seg = 1000
+    seed = 452
+    data_mat = sio.loadmat('./Dataset/SalinasA_corrected.mat')
+    data = data_mat['SalinasA_corrected']
+    gt_mat = sio.loadmat('./Dataset/SalinasA_gt.mat')
+    gt = gt_mat['SalinasA_gt']
+    dataset_name = "SalinasA_corrected"  # data name
+    class_count = 6  # calss_num
 load_path = "./Dataset/" + dataset_name
 ori_gt = gt
 img = p.std_norm(data)
@@ -82,11 +93,13 @@ if DATASET == 'Botswana':
 elif DATASET == 'indian':
     read_data = img[:, :, [29, 19, 9]]
 elif DATASET == 'salinas':
-    read_data = img[:, :, [32, 21, 11]]
+    read_data = img[:, :, [32, 21, 11]] #[57,19,9]
 elif DATASET == 'PaviaC':
     read_data = img[:, :, [55, 41, 12]]
 elif DATASET == 'HoustonU':
     read_data = img[:, :, [60, 28, 13]]
+elif DATASET == 'SalinasA':
+    read_data = img[:, :, [57, 19, 9]]
 # plt.figure()
 # plt.imshow(read_data)
 # plt.show()
@@ -116,7 +129,8 @@ opt.args.test = True
 opt.args.height = img.shape[0]
 opt.args.width = img.shape[1]
 
-for curr_seed in range(3150, 3310):
+# beyond test, original range is (3150, 3310)
+for curr_seed in range(3150, 3151):
     setup_seed(curr_seed)
     train(Q, gt, prt_img0, img, Adj, bias, opt.args.k, opt)
 
