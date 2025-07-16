@@ -16,7 +16,10 @@ from torch.nn import functional as F
 import matplotlib.colors as mcolors
 
 os.environ["CUDA_DEVICE_ORDER"] = 'PCI_BUS_ID'
-device = torch.device("cuda:{}".format(opt.args.k) if torch.cuda.is_available() else "cpu")
+if opt.args.cuda and torch.cuda.is_available():
+    device = torch.device(f"cuda:{opt.args.k}")
+else:
+    device = torch.device("cpu")
 
 
 class KMEANS:

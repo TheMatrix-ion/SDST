@@ -6,6 +6,7 @@ from calcu_graph import *
 import opt
 from train_SDST import train
 from utils import setup_seed
+from classic_methods import run_classic_methods
 
 p = Processor()
 torch.cuda.empty_cache()
@@ -51,7 +52,7 @@ elif DATASET == 'salinas':
     n_seg = 1000
     seed = 452
     data_mat = sio.loadmat(
-        '.Dataset/Salinas.mat')
+        './Dataset/Salinas.mat')
     data = data_mat['salinas_corrected']
     gt = data_mat['salinas_gt']
     dataset_name = "salinas"  # data_name
@@ -61,12 +62,12 @@ elif DATASET == 'HoustonU':
     n_seg = 1000
     seed = 458
     data_mat = sio.loadmat(
-        '.Dataset/HoustonU.mat')
+        './Dataset/HoustonU.mat')
     data = data_mat['HoustonU']
     gt = data_mat['HoustonU_GT']
     dataset_name = "HoustonU"  # data_name
     class_count = 15  # calss_num
-load_path = ".Dataset/" + dataset_name
+load_path = "./Dataset/" + dataset_name
 ori_gt = gt
 img = p.std_norm(data)
 
@@ -118,3 +119,5 @@ opt.args.width = img.shape[1]
 for curr_seed in range(3150, 3310):
     setup_seed(curr_seed)
     train(Q, gt, prt_img0, img, Adj, bias, opt.args.k, opt)
+
+run_classic_methods(img, gt, class_count)
