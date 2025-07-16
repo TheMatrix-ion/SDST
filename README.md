@@ -21,6 +21,32 @@ The performance of our proposed SDST in HSI datasets.
 python main.py
 ```
 
+## Dataset Preparation
+
+The training code expects the hyperspectral datasets in a folder named `Dataset/`:
+
+```
+Dataset/
+├── Botswana.mat
+├── Botswana_gt.mat
+├── Indian_pines_corrected.mat
+├── Indian_pines_gt.mat
+├── Salinas.mat
+├── HoustonU.mat
+└── ...
+```
+
+Please download the required `.mat` files and place them under this directory.
+If the files are missing, running `main.py` will fail with `FileNotFoundError`.
+
+### CPU Training
+
+GPU usage is enabled by default. To run on CPU, start the script with:
+
+```
+python main.py --cuda False
+```
+
 
 # Citation
 If you use code or datasets in this repository for your research, please cite our paper.
