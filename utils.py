@@ -173,6 +173,8 @@ def Draw_Classification_Map1(acc, label, mapping, name: str, scale: float = 4.0,
     plt.gca().xaxis.set_major_locator(plt.NullLocator())
     plt.gca().yaxis.set_major_locator(plt.NullLocator())
     plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
+    save_dir = './view_Label'
+    os.makedirs(save_dir, exist_ok=True)
     foo_fig.savefig('./view_Label/{}'.format(name) + '_{}'.format(acc) + '.png', format='png',
                     transparent=True, dpi=dpi,
                     pad_inches=0)

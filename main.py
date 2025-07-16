@@ -23,7 +23,7 @@ dataset = {
     2: "salinas",
     3: "Botswana",
     4: "HoustonU",
-    5: "salinasA"
+    5: "SalinasA"
 }
 DATASET = dataset[3]
 os.environ["CUDA_DEVICE_ORDER"] = 'PCI_BUS_ID'
@@ -68,14 +68,14 @@ elif DATASET == 'HoustonU':
     gt = data_mat['HoustonU_GT']
     dataset_name = "HoustonU"  # data_name
     class_count = 15  # calss_num
-elif DATASET == 'salinasA':
+elif DATASET == 'SalinasA':
     k = 7
     n_seg = 1000
     seed = 452
     data_mat = sio.loadmat('./Dataset/SalinasA_corrected.mat')
-    data = data_mat['SalinasA_corrected']
+    data = data_mat['salinasA_corrected']
     gt_mat = sio.loadmat('./Dataset/SalinasA_gt.mat')
-    gt = gt_mat['SalinasA_gt']
+    gt = gt_mat['salinasA_gt']
     dataset_name = "SalinasA_corrected"  # data name
     class_count = 6  # calss_num
 load_path = "./Dataset/" + dataset_name

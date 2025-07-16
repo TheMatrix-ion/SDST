@@ -431,6 +431,8 @@ def training(model, Trans, X, img, y, A, Ad, b, k, opt):
                   '|| fmi: {:.5f} || kappa: {:.5f} || purity: {:.5f} || acc: {:.5f}'
                   .format(epoch, loss, nmi, ari, ami, fmi, kappa, purity, acc)
                   )
+            save_dir = 'SDST/weight_parameters'
+            os.makedirs(save_dir, exist_ok=True)
             torch.save(
                 model.state_dict(),
                 'SDST/weight_parameters/{}_{}_{}_{:.5f}.pth'.format(
