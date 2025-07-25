@@ -132,6 +132,8 @@ opt.args.width = img.shape[1]
 # beyond test, original range is (3150, 3310)
 for curr_seed in range(3150, 3151):
     setup_seed(curr_seed)
+    # Transformer model
     train(Q, gt, prt_img0, img, Adj, bias, opt.args.k, opt)
+    # Classic methods
+    run_classic_methods(img, gt, class_count)
 
-run_classic_methods(img, gt, class_count)

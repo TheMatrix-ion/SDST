@@ -59,6 +59,65 @@ def run_pca_kmeans(img, gt, n_clusters, n_components=30):
     _evaluate(gt, labels)
 
 
+def run_autoencoder_kmeans(img, gt, n_clusters, hidden_dim=128, epochs=50,
+                           batch_size=1024, lr=1e-3):
+    """Train a simple autoencoder and cluster the latent features using KMeans."""
+    import torch
+    from torch import nn
+    from torch.utils.data import DataLoader, TensorDataset
+    from sklearn.cluster import KMeans
+
+    X = img.reshape(-1, img.shape[2]).astype(np.float32)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    class AE(nn.Module):
+        def __init__(self, in_dim, hid_dim):
+            super().__init__()
+            self.encoder = nn.Sequential(
+                nn.Linear(in_dim, hid_dim),
+                nn.ReLU(),
+                nn.Linear(hid_dim, hid_dim)
+            )
+            self.decoder = nn.Sequential(
+                nn.Linear(hid_dim, hid_dim),
+                nn.ReLU(),
+                nn.Linear(hid_dim, in_dim)
+            )
+
+        def forward(self, x):
+            z = self.encoder(x)
+            x_rec = self.decoder(z)
+            return x_rec, z
+
+    model = AE(X.shape[1], hidden_dim).to(device)
+    loader = DataLoader(TensorDataset(torch.from_numpy(X)),
+                        batch_size=batch_size, shuffle=True)
+    optm = torch.optim.Adam(model.parameters(), lr=lr)
+    criterion = nn.MSELoss()
+
+    model.train()
+    for _ in range(epochs):
+        for batch, in loader:
+            batch = batch.to(device)
+            optm.zero_grad()
+            out, _ = model(batch)
+            loss = criterion(out, batch)
+            loss.backward()
+            optm.step()
+
+    model.eval()
+    feats = []
+    with torch.no_grad():
+        for batch, in DataLoader(TensorDataset(torch.from_numpy(X)),
+                                 batch_size=batch_size):
+            _, z = model(batch.to(device))
+            feats.append(z.cpu().numpy())
+    feats = np.concatenate(feats, axis=0)
+
+    labels = KMeans(n_clusters=n_clusters, n_init="auto").fit_predict(feats)
+    _evaluate(gt, labels)
+
+
 def run_classic_methods(img, gt, n_clusters):
     """Evaluate several classic ML clustering methods."""
     print("\n=== DBSCAN ===")
@@ -67,3 +126,5 @@ def run_classic_methods(img, gt, n_clusters):
     run_kmeans(img, gt, n_clusters)
     print("\n=== PCA + KMeans ===")
     run_pca_kmeans(img, gt, n_clusters)
+    print("\n=== Autoencoder + KMeans ===")
+    run_autoencoder_kmeans(img, gt, n_clusters)
