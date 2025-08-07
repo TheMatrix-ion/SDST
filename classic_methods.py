@@ -1,7 +1,10 @@
 import numpy as np
 from sklearn import metrics
 from scipy.optimize import linear_sum_assignment
-
+import torch
+from torch import nn
+from torch.utils.data import DataLoader, TensorDataset
+from sklearn.cluster import KMeans
 
 def _evaluate(gt, pred):
     """Print OA, NMI, AMI, ARI and FMI for predictions."""
@@ -46,6 +49,26 @@ def run_kmeans(img, gt, n_clusters):
     labels = KMeans(n_clusters=n_clusters, n_init="auto").fit_predict(X)
     _evaluate(gt, labels)
 
+def run_gmm(img, gt, n_components):
+    """Run Gaussian Mixture Model using scikit-learn."""
+    from sklearn.mixture import GaussianMixture
+
+    X = img.reshape(-1, img.shape[2]).astype(np.float64)
+    gmm = GaussianMixture(n_components=n_components, reg_covar=1e-5)
+    try:
+        labels = gmm.fit_predict(X)
+    except Exception as e:
+        print(f"GMM failed: {e}")
+        return
+    _evaluate(gt, labels)
+
+# def run_spectral(img, gt, n_clusters):
+#     """Run Spectral Clustering using scikit-learn."""
+#     from sklearn.cluster import SpectralClustering
+
+#     X = img.reshape(-1, img.shape[2]).astype(np.float32)
+#     labels = SpectralClustering(n_clusters=n_clusters, assign_labels="kmeans").fit_predict(X)
+#     _evaluate(gt, labels)
 
 def run_pca_kmeans(img, gt, n_clusters, n_components=30):
     """Run PCA for dimensionality reduction followed by KMeans."""
@@ -62,11 +85,6 @@ def run_pca_kmeans(img, gt, n_clusters, n_components=30):
 def run_autoencoder_kmeans(img, gt, n_clusters, hidden_dim=128, epochs=50,
                            batch_size=1024, lr=1e-3):
     """Train a simple autoencoder and cluster the latent features using KMeans."""
-    import torch
-    from torch import nn
-    from torch.utils.data import DataLoader, TensorDataset
-    from sklearn.cluster import KMeans
-
     X = img.reshape(-1, img.shape[2]).astype(np.float32)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -124,6 +142,10 @@ def run_classic_methods(img, gt, n_clusters):
     run_dbscan(img, gt)
     print("\n=== KMeans ===")
     run_kmeans(img, gt, n_clusters)
+    print("\n=== GMM ===")
+    run_gmm(img, gt, n_clusters)
+    # print("\n=== Spectral Clustering ===")
+    # run_spectral(img, gt, n_clusters)
     print("\n=== PCA + KMeans ===")
     run_pca_kmeans(img, gt, n_clusters)
     print("\n=== Autoencoder + KMeans ===")

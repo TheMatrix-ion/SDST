@@ -40,6 +40,19 @@ class Processor:
         img = img.permute(1, 2, 0)
 
         return img.numpy()
+    # beyond test: update std_norm methods
+    # def std_norm(self, image):  # input tensor image size with CxHxW
+    #     image = image.astype(np.float32)
+    #     tensor_img = torch.tensor(image)
+    #     mean = tensor_img.mean(dim=[0, 1])
+    #     std = tensor_img.std(dim=[0, 1])
+    #     std[std == 0] = 1.0  # prevent division by zero
+    #     trans = transforms.Compose([
+    #         transforms.ToTensor(),
+    #         transforms.Normalize(mean, std)
+    #     ])  # (x - mean(x))/std(x) normalize to mean: 0, std: 1
+    #     img = trans(image)
+    #     img = img.permute(1, 2, 0)
 
     def one_zero_norm(self, image):
         image = torch.DoubleTensor(image.astype(np.int64)).permute(2, 0, 1)# input tensor image size with CxHxW

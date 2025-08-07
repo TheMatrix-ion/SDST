@@ -7,6 +7,7 @@ import opt
 from train_SDST import train
 from utils import setup_seed
 from classic_methods import run_classic_methods
+import h5py
 
 p = Processor()
 torch.cuda.empty_cache()
@@ -22,10 +23,10 @@ dataset = {
     1: "paviau",
     2: "salinas",
     3: "Botswana",
-    4: "HoustonU",
+    4: "HoustonU",  # Data error, can't test now.
     5: "SalinasA"
 }
-DATASET = dataset[3]
+DATASET = dataset[2]
 os.environ["CUDA_DEVICE_ORDER"] = 'PCI_BUS_ID'
 if DATASET == 'Botswana':
     seed = 472
@@ -37,6 +38,7 @@ if DATASET == 'Botswana':
     gt = gt_mat['Botswana_gt']
     dataset_name = "Botswana"  # data name
     class_count = 14  # class_num
+
 elif DATASET == 'indian':
     k = 12
     n_seg = 1000
@@ -53,21 +55,32 @@ elif DATASET == 'salinas':
     n_seg = 1000
     seed = 452
     data_mat = sio.loadmat('./Dataset/Salinas_corrected.mat')
-    data = data_mat['Salinas_corrected']
+    data = data_mat['salinas_corrected']
     gt_mat = sio.loadmat('./Dataset/Salinas_gt.mat')
-    gt = gt_mat['Salinas_gt']
+    gt = gt_mat['salinas_gt']
     dataset_name = "Salinas_corrected"  # data name
     class_count = 16  # calss_num
+# beyond test: change data read methods
 elif DATASET == 'HoustonU':
     k = 12
     n_seg = 1000
     seed = 458
-    data_mat = sio.loadmat(
-        './Dataset/HoustonU.mat')
-    data = data_mat['HoustonU']
-    gt = data_mat['HoustonU_GT']
+    with h5py.File('./Dataset/HoustonU.mat', 'r') as f:
+        data = np.array(f['ori_data'])
+    with h5py.File('./Dataset/HoustonU_gt.mat', 'r') as f:
+        gt = np.array(f['map'])
     dataset_name = "HoustonU"  # data_name
-    class_count = 15  # calss_num
+    class_count = 15
+# elif DATASET == 'HoustonU':
+#     k = 12
+#     n_seg = 1000
+#     seed = 458
+#     data_mat = sio.loadmat(
+#         './Dataset/HoustonU.mat')
+#     data = data_mat['HoustonU']
+#     gt = data_mat['HoustonU_GT']
+#     dataset_name = "HoustonU"  # data_name
+#     class_count = 15  # calss_num
 elif DATASET == 'SalinasA':
     k = 7
     n_seg = 1000
@@ -93,7 +106,7 @@ if DATASET == 'Botswana':
 elif DATASET == 'indian':
     read_data = img[:, :, [29, 19, 9]]
 elif DATASET == 'salinas':
-    read_data = img[:, :, [32, 21, 11]] #[57,19,9]
+    read_data = img[:, :, [32, 21, 11]]  # [57,19,9]
 elif DATASET == 'PaviaC':
     read_data = img[:, :, [55, 41, 12]]
 elif DATASET == 'HoustonU':
@@ -131,9 +144,7 @@ opt.args.width = img.shape[1]
 
 # beyond test, original range is (3150, 3310)
 for curr_seed in range(3150, 3151):
-    setup_seed(curr_seed)
-    # Transformer model
-    train(Q, gt, prt_img0, img, Adj, bias, opt.args.k, opt)
-    # Classic methods
+    # setup_seed(curr_seed)
+    # train(Q, gt, prt_img0, img, Adj, bias, opt.args.k, opt)
     run_classic_methods(img, gt, class_count)
 
