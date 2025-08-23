@@ -1,13 +1,10 @@
 import numpy as np
 from sklearn import metrics
 from scipy.optimize import linear_sum_assignment
-import torch
-from torch import nn
-from torch.utils.data import DataLoader, TensorDataset
-from sklearn.cluster import KMeans
+
 
 def _evaluate(gt, pred):
-    """Print OA, NMI, AMI, ARI and FMI for predictions."""
+    """Print OA, NMI, AMI, ARI, FMI, Kappa and Purity for predictions."""
     y_true = gt.reshape(-1)
     y_pred = pred.reshape(-1)
 
@@ -29,8 +26,14 @@ def _evaluate(gt, pred):
     ari = metrics.adjusted_rand_score(y_true, y_pred)
     ami = metrics.adjusted_mutual_info_score(y_true, y_pred)
     fmi = metrics.fowlkes_mallows_score(y_true, y_pred)
-    print(f":OA {oa:.4f}, NMI {nmi:.4f}, AMI {ami:.4f}, ARI {ari:.4f}, FMI {fmi:.4f}")
-
+    # print(f":OA {oa:.4f}, NMI {nmi:.4f}, AMI {ami:.4f}, ARI {ari:.4f}, FMI {fmi:.4f}")
+    kappa = metrics.cohen_kappa_score(y_true, mapped)
+    matrix = metrics.confusion_matrix(y_true, mapped)
+    purity = np.sum(np.max(matrix, axis=0)) / np.sum(matrix)
+    print(
+        f":OA {oa:.4f}, NMI {nmi:.4f}, AMI {ami:.4f}, ARI {ari:.4f}, "
+        f"FMI {fmi:.4f}, Kappa {kappa:.4f}, Purity {purity:.4f}"
+    )
 
 def run_dbscan(img, gt):
     """Run DBSCAN using scikit-learn."""
@@ -62,14 +65,6 @@ def run_gmm(img, gt, n_components):
         return
     _evaluate(gt, labels)
 
-# def run_spectral(img, gt, n_clusters):
-#     """Run Spectral Clustering using scikit-learn."""
-#     from sklearn.cluster import SpectralClustering
-
-#     X = img.reshape(-1, img.shape[2]).astype(np.float32)
-#     labels = SpectralClustering(n_clusters=n_clusters, assign_labels="kmeans").fit_predict(X)
-#     _evaluate(gt, labels)
-
 def run_pca_kmeans(img, gt, n_clusters, n_components=30):
     """Run PCA for dimensionality reduction followed by KMeans."""
     from sklearn.cluster import KMeans
@@ -85,6 +80,11 @@ def run_pca_kmeans(img, gt, n_clusters, n_components=30):
 def run_autoencoder_kmeans(img, gt, n_clusters, hidden_dim=128, epochs=50,
                            batch_size=1024, lr=1e-3):
     """Train a simple autoencoder and cluster the latent features using KMeans."""
+    import torch
+    from torch import nn
+    from torch.utils.data import DataLoader, TensorDataset
+    from sklearn.cluster import KMeans
+
     X = img.reshape(-1, img.shape[2]).astype(np.float32)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
