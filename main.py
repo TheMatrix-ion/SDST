@@ -7,7 +7,6 @@ import opt
 from train_SDST import train
 from utils import setup_seed
 from classic_methods import run_classic_methods
-import h5py
 
 p = Processor()
 torch.cuda.empty_cache()
@@ -20,14 +19,11 @@ Test_Time_ALL = []
 seed = 3030
 dataset = {
     0: "indian",
-    1: "PaviaU",
-    2: "salinas",
-    3: "Botswana",
-    4: "HoustonU",  # Data error, can't test now.
-    5: "SalinasA",
-    6: "KSC"
+    1: "Botswana",
+    2: "SalinasA",
+    3: "KSC"
 }
-DATASET = dataset[0]
+DATASET = dataset[3]
 os.environ["CUDA_DEVICE_ORDER"] = 'PCI_BUS_ID'
 if DATASET == 'Botswana':
     seed = 472
@@ -51,37 +47,7 @@ elif DATASET == 'indian':
     gt = gt_mat['indian_pines_gt']
     dataset_name = "indian"  # data name
     class_count = 16  # class_num
-elif DATASET == 'salinas':
-    k = 7
-    n_seg = 1000
-    seed = 452
-    data_mat = sio.loadmat('./Dataset/Salinas_corrected.mat')
-    data = data_mat['salinas_corrected']
-    gt_mat = sio.loadmat('./Dataset/Salinas_gt.mat')
-    gt = gt_mat['salinas_gt']
-    dataset_name = "Salinas_corrected"  # data name
-    class_count = 16  # calss_num
 
-elif DATASET == 'HoustonU':
-    k = 12
-    n_seg = 1000
-    seed = 458
-    with h5py.File('./Dataset/HoustonU.mat', 'r') as f:
-        data = np.array(f['ori_data'])
-    with h5py.File('./Dataset/HoustonU_gt.mat', 'r') as f:
-        gt = np.array(f['map'])
-    dataset_name = "HoustonU"  # data_name
-    class_count = 15
-elif DATASET == 'PaviaU':  # 或 'PaviaU'
-    k = 10  # 构图时的邻居数，可按经验或交叉验证调整
-    n_seg = 1000  # 超像素数，可根据图像大小再微调
-    seed = 347  # 随机种子，只要固定即可复现结果
-    data_mat = sio.loadmat('./Dataset/PaviaU.mat')
-    data = data_mat['paviaU']
-    gt_mat = sio.loadmat('./Dataset/PaviaU_gt.mat')
-    gt = gt_mat['paviaU_gt']
-    dataset_name = "PaviaU"
-    class_count = 9
 elif DATASET == 'SalinasA':
     k = 7
     n_seg = 1000
@@ -102,6 +68,7 @@ elif DATASET == 'KSC':
     gt = gt_mat['KSC_gt']
     dataset_name = "KSC"  # data name
     class_count = 13  # calss_num
+
 load_path = "./Dataset/" + dataset_name
 ori_gt = gt
 img = p.std_norm(data)
@@ -116,12 +83,6 @@ if DATASET == 'Botswana':
     read_data = img[:, :, [35, 15, 6]]  # indian [30, 33, 15]
 elif DATASET == 'indian':
     read_data = img[:, :, [29, 19, 9]]
-elif DATASET == 'salinas':
-    read_data = img[:, :, [32, 21, 11]]  # [57,19,9]
-elif DATASET == 'PaviaU':
-    read_data = img[:, :, [55, 41, 12]]
-elif DATASET == 'HoustonU':
-    read_data = img[:, :, [60, 28, 13]]
 elif DATASET == 'SalinasA':
     read_data = img[:, :, [57, 19, 9]]
 elif DATASET == 'KSC':
@@ -155,8 +116,7 @@ opt.args.test = True
 opt.args.height = img.shape[0]
 opt.args.width = img.shape[1]
 
-# beyond test, original range is (3150, 3310)
-for curr_seed in range(3150, 3151):
+for curr_seed in range(3150, 3310):
     setup_seed(curr_seed)
     train(Q, gt, prt_img0, img, Adj, bias, opt.args.k, opt)
     run_classic_methods(img, gt, class_count)

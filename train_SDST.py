@@ -378,7 +378,6 @@ class SDST(nn.Module):
 
         return y, FCN_out, GCN_out, DZ_Conv1, DZ_Conv2
 
-# 只生成一张结果图的训练方法
 def training(model, Trans, X, img, y, A, Ad, b, k, opt):
     print("Model_Init...")
     # calculate embedding similarity and cluster centers
@@ -393,11 +392,6 @@ def training(model, Trans, X, img, y, A, Ad, b, k, opt):
     cerloss = nn.MSELoss()
     traincd_Z_acc_save = []
     traincd_Z_loss_save = []
-    best_pred = None
-    best_mapping = None
-    best_y_outbg = None
-    best_true_outbg = None
-
     for epoch in range(opt.args.epochs):
         # input & output
         cross, FCN_out, GCN_out, DZ_Conv1, DZ_Conv2 = model(X, A, X_tilde, Ad)
@@ -413,7 +407,7 @@ def training(model, Trans, X, img, y, A, Ad, b, k, opt):
         loss = sc_loss + 1 * kl_loss + 10 * (re_loss)
 
         optimizer.zero_grad()
-        loss.backward()
+        loss.backward(retain_graph=True)
         optimizer.step()
 
         # clustering & evaluation
@@ -431,100 +425,26 @@ def training(model, Trans, X, img, y, A, Ad, b, k, opt):
                   '|| fmi: {:.5f} || kappa: {:.5f} || purity: {:.5f} || acc: {:.5f}'
                   .format(epoch, loss, nmi, ari, ami, fmi, kappa, purity, acc)
                   )
-            save_dir = 'SDST/weight_parameters'
-            os.makedirs(save_dir, exist_ok=True)
-            torch.save(
-                model.state_dict(),
-                'SDST/weight_parameters/{}_{}_{}_{:.5f}.pth'.format(
-                    k, opt.args.name, opt.args.n_samples, acc))
-            best_pred = y_pred.detach().cpu()
-            best_mapping = mapping
-            best_y_outbg = y_outbg
-            best_true_outbg = true_outbg
+            torch.save(model.state_dict(),
+                       'SDST/weight_parameters/{}_{}_{}_{:.5f}.pth'
+                       .format(k, opt.args.name, opt.args.n_samples, acc))
+            paua(y_outbg, true_outbg, y)
+            transformed_arr = np.array([mapping[element] for element in y_pred.reshape(-1).cpu().numpy()]).reshape(
+                opt.args.height,
+                opt.args.width)
+            y_pred = transformed_arr + 1
+            Draw_Classification_Map1(opt.args.acc, y_pred, mapping, name=opt.args.name + '_bg')
+            # no bg
+            y_pred = y_pred.reshape((opt.args.height, opt.args.width))
+            ind = np.where(y == -1)
+            y_pred[ind] = 0
+            Draw_Classification_Map1(opt.args.acc, y_pred, mapping, name=opt.args.name + '_no_bg')
+            # Draw_Classification(y_pred, y, opt.args.name, acc)
         traincd_Z_acc_save.append(acc)
         # traincd_dist_loss_save.append(dist_loss.detach().cpu().numpy())
         traincd_Z_loss_save.append(loss.detach().cpu().numpy())
 
-    if best_pred is not None:
-        paua(best_y_outbg, best_true_outbg, y)
-        transformed_arr = np.array([best_mapping[element] for element in best_pred.reshape(-1).numpy()]).reshape(
-            opt.args.height,
-            opt.args.width)
-        best_img = transformed_arr + 1
-        Draw_Classification_Map1(opt.args.acc, best_img, best_mapping, name=opt.args.name + '_bg')
-        best_img = best_img.reshape((opt.args.height, opt.args.width))
-        ind = np.where(y == -1)
-        best_img[ind] = 0
-        Draw_Classification_Map1(opt.args.acc, best_img, best_mapping, name=opt.args.name + '_no_bg')
-
     return opt.args.acc, opt.args.nmi, opt.args.ari, opt.args.ami, opt.args.fmi, opt.args.kappa, opt.args.purity
-# def training(model, Trans, X, img, y, A, Ad, b, k, opt):
-#     print("Model_Init...")
-#     # calculate embedding similarity and cluster centers
-#     centers, cluster_id, true_outbg, y_pred, mapping = model_init(model, Trans, X, y, A)
-
-#     # initialize cluster centers
-#     model.cluster_centers.data = torch.tensor(centers).to(device)
-#     print("Training…")
-#     # add gaussian noise
-#     X_tilde = gaussian_noised_feature(X, img)
-#     optimizer = torch.optim.Adam(model.parameters(), lr=opt.args.lr, weight_decay=1e-4)
-#     cerloss = nn.MSELoss()
-#     traincd_Z_acc_save = []
-#     traincd_Z_loss_save = []
-#     for epoch in range(opt.args.epochs):
-#         # input & output
-#         cross, FCN_out, GCN_out, DZ_Conv1, DZ_Conv2 = model(X, A, X_tilde, Ad)
-#         DYY = squared_distance(cross)
-#         a = torch.tensor(opt.args.n_samples, dtype=torch.float32)
-#         DZ_Conv1, DZ_Conv2 = DZ_Conv1 + b, DZ_Conv2 + b
-
-#         # dist_loss = _loss(cross, cluster_id, centers.cpu())
-#         re_loss = cerloss(DZ_Conv1, X) + cerloss(DZ_Conv2, X)  # 加上偏差
-#         kl_loss = klloss(cross, FCN_out, GCN_out, model) * 1e4
-#         sc_loss = (torch.sum(A * DYY) / a) * 1e2
-
-#         loss = sc_loss + 1 * kl_loss + 10 * (re_loss)
-
-#         optimizer.zero_grad()
-#         loss.backward(retain_graph=True)
-#         optimizer.step()
-
-#         # clustering & evaluation
-#         acc, nmi, ari, ami, fmi, kappa, purity, centers, cluster_id, y_outbg, true_outbg, y_pred, mapping = clustering(
-#             GCN_out, Trans, y)
-#         if acc > opt.args.acc:
-#             opt.args.acc = acc
-#             opt.args.nmi = nmi
-#             opt.args.ami = ami
-#             opt.args.ari = ari
-#             opt.args.fmi = fmi
-#             opt.args.kappa = kappa
-#             opt.args.purity = purity
-#             print('epoch{}:   loss: {:.5f} || nmi: {:.5f} || ari: {:.5f}|| ami: {:.5f} '
-#                   '|| fmi: {:.5f} || kappa: {:.5f} || purity: {:.5f} || acc: {:.5f}'
-#                   .format(epoch, loss, nmi, ari, ami, fmi, kappa, purity, acc)
-#                   )
-#             torch.save(model.state_dict(),
-#                        'SDST/weight_parameters/{}_{}_{}_{:.5f}.pth'
-#                        .format(k, opt.args.name, opt.args.n_samples, acc))
-#             paua(y_outbg, true_outbg, y)
-#             transformed_arr = np.array([mapping[element] for element in y_pred.reshape(-1).cpu().numpy()]).reshape(
-#                 opt.args.height,
-#                 opt.args.width)
-#             y_pred = transformed_arr + 1
-#             Draw_Classification_Map1(opt.args.acc, y_pred, mapping, name=opt.args.name + '_bg')
-#             # no bg
-#             y_pred = y_pred.reshape((opt.args.height, opt.args.width))
-#             ind = np.where(y == -1)
-#             y_pred[ind] = 0
-#             Draw_Classification_Map1(opt.args.acc, y_pred, mapping, name=opt.args.name + '_no_bg')
-#             # Draw_Classification(y_pred, y, opt.args.name, acc)
-#         traincd_Z_acc_save.append(acc)
-#         # traincd_dist_loss_save.append(dist_loss.detach().cpu().numpy())
-#         traincd_Z_loss_save.append(loss.detach().cpu().numpy())
-
-#     return opt.args.acc, opt.args.nmi, opt.args.ari, opt.args.ami, opt.args.fmi, opt.args.kappa, opt.args.purity
 
 def train(Q, gt, prt_img0, img, A, bias, k, opt):
     bias = torch.from_numpy(bias).to(device)
